@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>연구 주제 추천기 - Heya</title>
+    <style>
+        :root { --primary: #002c62; --accent: #2563eb; --bg: #f8fafc; --text: #1e293b; }
+        body { font-family: 'Pretendard', sans-serif; background-color: var(--bg); display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; color: var(--text); }
+        .card { background: white; padding: 30px; border-radius: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); text-align: center; width: 95%; max-width: 650px; border: 1px solid #e2e8f0; }
+        h1 { font-size: 1.6rem; margin-bottom: 8px; color: var(--primary); }
+        .meta-info { font-size: 0.85rem; color: #64748b; margin-bottom: 20px; }
+        .meta-info a { color: var(--accent); text-decoration: none; font-weight: 600; }
+        
+        .control-panel { display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px; }
+        .slot { background-color: #f1f5f9; padding: 20px; border-radius: 16px; border: 2px solid #e2e8f0; transition: 0.3s; }
+        .slot.spinning { border-color: var(--accent); background-color: #eff6ff; animation: pulse 0.1s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.01); } 100% { transform: scale(1); } }
+        
+        .slot-label { font-size: 0.8rem; color: #64748b; margin-bottom: 8px; display: block; font-weight: bold; text-align: left; }
+        
+        /* 셀렉트 박스 스타일 */
+        select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e0; font-size: 1.1rem; font-weight: 600; font-family: inherit; color: var(--text); cursor: pointer; background-color: white; }
+        select:focus { outline: none; border-color: var(--accent); }
+
+        .formula { font-size: 1rem; color: #94a3b8; margin: 5px 0; font-weight: 500; }
+        
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-main { background-color: var(--primary); color: white; border: none; padding: 18px; font-size: 1.1rem; font-weight: 700; border-radius: 12px; cursor: pointer; transition: 0.2s; flex: 2; }
+        .btn-sub { background-color: #64748b; color: white; border: none; padding: 10px; font-size: 0.9rem; border-radius: 10px; cursor: pointer; flex: 1; }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        
+        footer { margin-top: 20px; font-size: 0.8rem; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>🔬 연구 주제 발전기</h1>
+    <div class="meta-info">
+        변수 참조: <a href="https://www.serii.re.kr/fus/file/down0010f.do?attach_file_id=6910&file_seq=4&alias_name=20260213085145296_1" target="_blank">Seltis 2020 데이터</a>
+    </div>
+
+    <div class="control-panel">
+        <div class="slot" id="slotA">
+            <span class="slot-label">독립 변수 (A) 직접 선택 또는 랜덤</span>
+            <select id="selectA"></select>
+        </div>
+
+        <div class="formula">에 따른</div>
+
+        <div class="slot" id="slotB">
+            <span class="slot-label">종속 변수 (B) 직접 선택 또는 랜덤</span>
+            <select id="selectB"></select>
+        </div>
+
+        <div class="formula">차이 연구</div>
+    </div>
+
+    <div class="btn-group">
+        <button class="btn-main" onclick="runMixer(true, true)">전체 랜덤 믹스</button>
+    </div>
+    <div class="btn-group">
+        <button class="btn-sub" onclick="runMixer(true, false)">A만 랜덤</button>
+        <button class="btn-sub" onclick="runMixer(false, true)">B만 랜덤</button>
+    </div>
+
+    <footer>Created by <strong>heya</strong></footer>
+</div>
+
+<script>
+    const groupA = ["학교급", "지역", "성별", "학급 수 규모", "부장교사 여부", "경력", "담임 여부", "담당 학년", "담당 과목", "혁신학교 여부", "다른 직업 경험 여부", "비정규직 교원 여부", "휴직 경험 여부", "교원자격증 종별", "교사 자격 취득 경로", "교사 가구 소득"];
+    const groupB = ["교원 양성 과정 실무 연계성 인식도", "승진 계획 여부", "이직 계획 여부", "정년 재직 예상 여부", "교직 선택 동기", "소명 의식", "사기/열의", "교사효능감", "교사소진", "조직소속감", "자율성 인식", "조직 내 관계", "학교 목표구조 인식", "조직 내 갈등 인식", "학교장 리더십 인식", "조직 공정성 인식", "업무 부담 비중", "업무 인식", "선호 업무 처리 방식", "정책 이해도", "중요하다고 생각하는 정책", "정책 실행 인식", "연수 참여", "교원학습공동체 참여", "일과 삶의 균형 인식", "비판적 사고 역량", "의사소통 역량", "창의성 역량", "협업 역량", "디지털 역량", "교육과정 재구성 역량", "수업 설계와 실행 역량", "학생 평가 역량", "생활지도와 상담 역량", "진로지도 역량", "학급경영 역량", "교무행정업무 역량", "학교경영참여 인식", "교육법/정책의 이해와 적용 역량", "생활만족도", "직무만족도"];
+
+    // 페이지 로드 시 셀렉트 박스 채우기
+    const selA = document.getElementById('selectA');
+    const selB = document.getElementById('selectB');
+
+    groupA.forEach(item => { let opt = new Option(item, item); selA.add(opt); });
+    groupB.forEach(item => { let opt = new Option(item, item); selB.add(opt); });
+
+    function runMixer(doA, doB) {
+        let count = 0;
+        const interval = setInterval(() => {
+            if (doA) {
+                selA.value = groupA[Math.floor(Math.random() * groupA.length)];
+                document.getElementById('slotA').classList.add('spinning');
+            }
+            if (doB) {
+                selB.value = groupB[Math.floor(Math.random() * groupB.length)];
+                document.getElementById('slotB').classList.add('spinning');
+            }
+
+            count++;
+            if (count > 12) {
+                clearInterval(interval);
+                document.getElementById('slotA').classList.remove('spinning');
+                document.getElementById('slotB').classList.remove('spinning');
+            }
+        }, 50);
+    }
+</script>
+
+</body>
+</html>
